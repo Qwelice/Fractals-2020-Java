@@ -72,8 +72,10 @@ public class VideoPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 fileChooser.showSaveDialog(VideoPanel.this);
-                var name = fileChooser.getSelectedFile().getPath();
-                videoManager.setOutputFileName(name);
+                try{
+                    var name = fileChooser.getSelectedFile().getPath();
+                    videoManager.setOutputFileName(name);
+                }catch (NullPointerException exception){}
             }
         });
     }
