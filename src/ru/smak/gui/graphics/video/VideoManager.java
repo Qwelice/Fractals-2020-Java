@@ -11,8 +11,6 @@ import ru.smak.math.Fractal;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 public class VideoManager implements Manager{
@@ -106,6 +104,7 @@ public class VideoManager implements Manager{
     }
 
     private void pack(){
+        threads.clear();
         for(var f : fCreators){
             f.buffer.forEach(img->{
                 var correctImg = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
@@ -113,6 +112,7 @@ public class VideoManager implements Manager{
                 gCI.drawImage(img, 0, 0, null);
                 frames.add(correctImg);
             });
+            f.buffer.clear();
         }
     }
 
@@ -131,6 +131,7 @@ public class VideoManager implements Manager{
             }
         });
         writer.close();
+        frames.clear();
     }
 
     public void addPlane(PlaneState plane){
@@ -162,22 +163,6 @@ public class VideoManager implements Manager{
             this.index = index;
         }
 
-        public int getIndex(){
-            return index;
-        }
-        public int getCountToDo(){
-            return countToDo;
-        }
-
-        public FramesCreator(int index, int countToDo){
-            this.index = index;
-            this.countToDo = countToDo;
-        }
-
-        public void setCountToDo(int countToDo){
-            this.countToDo = countToDo;
-        }
-
         public void addConsider(CartesianScreenPlane plane){
             consider.add(plane);
         }
@@ -185,17 +170,28 @@ public class VideoManager implements Manager{
             consider.remove(plane);
         }
 
+        public void fillPlane(CartesianScreenPlane filling, CartesianScreenPlane filler){
+            filling.setWidth(filler.getWidth());
+            filling.setHeight(filler.getHeight());
+            filling.xMin = filler.xMin;
+            filling.xMax = filler.xMax;
+            filling.yMin = filler.yMin;
+            filling.yMax = filler.yMax;
+        }
+
         @Override
         public void run() {
             var frameCount = frameRate * videoTime;
 
+            var plane = new CartesianScreenPlane(0, 0,
+                    0, 0, 0, 0);
+            var painter = new FractalPainter(plane, fractal);
+            painter.col = colorizer;
+
             for(int i = 1; i < consider.size(); i++){
                 var pPrev = consider.get(i-1);
                 var pCurr = consider.get(i);
-                var plane = new CartesianScreenPlane(pPrev.getWidth(), pPrev.getHeight(),
-                        pPrev.xMin, pPrev.xMax, pPrev.yMin, pPrev.yMax);
-                var painter = new FractalPainter(plane, fractal);
-                painter.col = colorizer;
+                fillPlane(plane, pPrev);
                 var img = painter.getSavedImage();
                 buffer.add(img);
                 var dXMin = (pCurr.xMin - pPrev.xMin)/frameCount;
