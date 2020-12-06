@@ -1,13 +1,16 @@
 package ru.smak.gui;
 
-import ru.smak.gui.graphics.FinishedListener;
-import ru.smak.gui.graphics.FractalPainter;
-import ru.smak.gui.graphics.SelectionPainter;
-import ru.smak.gui.graphics.components.GraphicsPanel;
+import ru.smak.gui.graphics.CommonPanel;
+import ru.smak.gui.graphics.painters.FinishedListener;
+import ru.smak.gui.graphics.painters.FractalPainter;
+import ru.smak.gui.graphics.painters.SelectionPainter;
 import ru.smak.gui.graphics.coordinates.CartesianScreenPlane;
 import ru.smak.gui.graphics.coordinates.Converter;
-import ru.smak.gui.graphics.fractalcolors.ColorScheme1;
 import ru.smak.gui.graphics.fractalcolors.ColorScheme2;
+import ru.smak.gui.graphics.video.CatchListener;
+import ru.smak.gui.graphics.video.ImageManager;
+import ru.smak.gui.graphics.video.PlaneState;
+import ru.smak.gui.graphics.video.VideoManager;
 import ru.smak.math.Mandelbrot;
 
 import javax.swing.*;
@@ -15,38 +18,54 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class MainWindow extends JFrame {
-    GraphicsPanel mainPanel;
+    //GraphicsPanel mainPanel;
+    CommonPanel commonPanel;
 
     static final Dimension MIN_SIZE = new Dimension(450, 350);
-    static final Dimension MIN_FRAME_SIZE = new Dimension(600, 500);
+    static final Dimension MIN_FRAME_SIZE = new Dimension(720, 500);
 
     public MainWindow(){
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setMinimumSize(MIN_FRAME_SIZE);
         setTitle("Фракталы");
 
-        mainPanel = new GraphicsPanel();
+        //mainPanel = new GraphicsPanel();
+        commonPanel =  new CommonPanel();
 
-        mainPanel.setBackground(Color.WHITE);
+        commonPanel.graphicsPanel.setBackground(Color.WHITE);
+        //mainPanel.setBackground(Color.WHITE);
+
+        var button = new JButton("Открыть");
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                commonPanel.videoPanel.changeVisible();
+                commonPanel.graphicsPanel.repaint();
+            }
+        });
 
         GroupLayout gl = new GroupLayout(getContentPane());
         setLayout(gl);
         gl.setVerticalGroup(gl.createSequentialGroup()
                 .addGap(4)
-                .addComponent(mainPanel, (int)(MIN_SIZE.height*0.8), MIN_SIZE.height, GroupLayout.DEFAULT_SIZE)
+                .addComponent(button, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE)
+                .addGap(4)
+                .addComponent(commonPanel, (int)(MIN_SIZE.height*0.8), MIN_SIZE.height, GroupLayout.DEFAULT_SIZE)
                 .addGap(4)
         );
         gl.setHorizontalGroup(gl.createSequentialGroup()
                 .addGap(4)
                 .addGroup(gl.createParallelGroup()
-                        .addComponent(mainPanel, MIN_SIZE.width, MIN_SIZE.width, GroupLayout.DEFAULT_SIZE)
+                        .addComponent(button, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE)
+                        .addGap(4)
+                        .addComponent(commonPanel, MIN_SIZE.width, MIN_SIZE.width, GroupLayout.DEFAULT_SIZE)
                 )
                 .addGap(4)
         );
         pack();
         var plane = new CartesianScreenPlane(
-                mainPanel.getWidth(),
-                mainPanel.getHeight(),
+                commonPanel.graphicsPanel.getWidth(),
+                commonPanel.graphicsPanel.getHeight(),
                 -2, 1, -1, 1
         );
 
@@ -57,21 +76,22 @@ public class MainWindow extends JFrame {
         fp.addFinishedListener(new FinishedListener() {
             @Override
             public void finished() {
-                mainPanel.repaint();
+                commonPanel.graphicsPanel.repaint();
             }
         });
-        mainPanel.addPainter(fp);
-        var sp = new SelectionPainter(mainPanel.getGraphics());
+        commonPanel.graphicsPanel.addPainter(fp);
+        var sp = new SelectionPainter(commonPanel.graphicsPanel.getGraphics());
 
-        mainPanel.addComponentListener(new ComponentAdapter() {
+        commonPanel.graphicsPanel.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                plane.setWidth(mainPanel.getWidth());
-                plane.setHeight(mainPanel.getHeight());
-                sp.setGraphics(mainPanel.getGraphics());
+                plane.setWidth(commonPanel.graphicsPanel.getWidth());
+                plane.setHeight(commonPanel.graphicsPanel.getHeight());
+                sp.setGraphics(commonPanel.graphicsPanel.getGraphics());
+                commonPanel.graphicsPanel.repaint();
             }
         });
-        mainPanel.addMouseListener(new MouseAdapter() {
+        commonPanel.graphicsPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
@@ -92,15 +112,29 @@ public class MainWindow extends JFrame {
                 plane.xMax = xMax;
                 plane.yMin = yMin;
                 plane.yMax = yMax;
-                mainPanel.repaint();
+                commonPanel.graphicsPanel.repaint();
             }
         });
 
-        mainPanel.addMouseMotionListener(new MouseMotionAdapter() {
+        commonPanel.graphicsPanel.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
                 super.mouseDragged(e);
                 sp.setCurrentPoint(e.getPoint());
+            }
+        });
+
+        commonPanel.videoPanel.addCatchListener(new CatchListener() {
+            @Override
+            public void timeToCatch(ImageManager imageManager, VideoManager videoManager) {
+                commonPanel.videoPanel.setData(m, c);
+                imageManager.addImageIcon(new PlaneState(
+                        plane.xMin, plane.xMax, plane.yMin, plane.yMax
+                ));
+                videoManager.setPrefScreen(MIN_SIZE);
+                videoManager.addPlane(new PlaneState(
+                        plane.xMin, plane.xMax, plane.yMin, plane.yMax
+                ));
             }
         });
     }
