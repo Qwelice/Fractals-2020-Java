@@ -73,20 +73,21 @@ public class VideoManager implements Manager{
             var r = 0;
             for(int i = 0; i < fCreators.size(); i++){
                 var f = fCreators.get(i);
-                var size = f.consider.size();
+                var size = i > 0 ? f.consider.size() + 1 : f.consider.size();
                 for(int k = 0; k < size; k++){
+                    if(i > 0 && k == 0){
+                        f.consider.add(k, new CartesianScreenPlane(
+                                caughtPlanes.get(r-1).getWidth(), caughtPlanes.get(r-1).getHeight(),
+                                caughtPlanes.get(r-1).xMin, caughtPlanes.get(r-1).xMax,
+                                caughtPlanes.get(r-1).yMin, caughtPlanes.get(r-1).yMax
+                        ));
+                        continue;
+                    }
                     var p = caughtPlanes.get(r);
                     f.consider.set(k, new CartesianScreenPlane(
                             p.getWidth(), p.getHeight(),
                             p.xMin, p.xMax, p.yMin, p.yMax
                     ));
-                    if(i > 0){
-                        f.consider.add(0, new CartesianScreenPlane(
-                                caughtPlanes.get(r-1).getWidth(), caughtPlanes.get(r-1).getHeight(),
-                                caughtPlanes.get(r-1).xMin, caughtPlanes.get(r-1).xMax,
-                                caughtPlanes.get(r-1).yMin, caughtPlanes.get(r-1).yMax
-                        ));
-                    }
                     r++;
                 }
             }
