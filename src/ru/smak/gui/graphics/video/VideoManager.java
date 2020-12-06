@@ -26,7 +26,7 @@ public class VideoManager implements Manager{
 
     private String outputFileName = "D:\\myVideo.mp4";
     public void setOutputFileName(String fileName){
-        if(!fileName.isEmpty())
+        if(!fileName.isEmpty() && fileName.contains(".mp4"))
             outputFileName = fileName;
     }
 
@@ -38,6 +38,7 @@ public class VideoManager implements Manager{
     private Fractal fractal;
     private Colorizer colorizer;
 
+    // Запись видео ведётся на основном потоке!
     public void createVideo(){
         prepareFrames();
         pack();

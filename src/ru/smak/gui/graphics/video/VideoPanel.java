@@ -18,6 +18,8 @@ public class VideoPanel extends JPanel {
     private final ImageManager imageManager;
     private final VideoManager videoManager;
 
+    private final JFileChooser fileChooser;
+
     private final ArrayList<CatchListener> catchListeners = new ArrayList<>();
 
     public VideoPanel(){
@@ -30,6 +32,8 @@ public class VideoPanel extends JPanel {
 
         imageManager = new ImageManager();
         videoManager = new VideoManager();
+
+        fileChooser = new JFileChooser();
 
         GroupLayout groupLayout = new GroupLayout(this);
 
@@ -62,6 +66,14 @@ public class VideoPanel extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 if(dlm.size() >= 2)
                     videoManager.createVideo();
+            }
+        });
+        buttonsPanel.getOutputPath.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                fileChooser.showSaveDialog(VideoPanel.this);
+                var name = fileChooser.getSelectedFile().getPath();
+                videoManager.setOutputFileName(name);
             }
         });
     }
