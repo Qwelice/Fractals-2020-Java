@@ -63,19 +63,6 @@ public class Complex {
         return im;
     }
 
-    public void setRe(double re){
-        this.re = re;
-    }
-    public void setIm(double im){
-        this.im = im;
-    }
-    public double getRe(){
-        return re;
-    }
-    public double getIm(){
-        return im;
-    }
-
     /**
      * Метод сложения с присвоением для комплексных чисел
      * @param other прибавляемое комплексное число
