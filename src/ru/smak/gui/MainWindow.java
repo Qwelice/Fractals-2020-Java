@@ -70,6 +70,7 @@ public class MainWindow extends JFrame {
                 plane.setWidth(mainPanel.getWidth());
                 plane.setHeight(mainPanel.getHeight());
                 sp.setGraphics(mainPanel.getGraphics());
+                mainPanel.repaint();
             }
         });
         mainPanel.addMouseListener(new MouseAdapter() {

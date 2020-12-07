@@ -68,6 +68,7 @@ public class JuliaFrame extends JFrame {
                 plane.setWidth(mainPanel.getWidth());
                 plane.setHeight(mainPanel.getHeight());
                 sp.setGraphics(mainPanel.getGraphics());
+                mainPanel.repaint();
             }
         });
         mainPanel.addMouseListener(new MouseAdapter() {
@@ -120,4 +121,3 @@ public class JuliaFrame extends JFrame {
         mainPanel.repaint();
     }
 }
-
