@@ -4,6 +4,7 @@ import ru.smak.gui.graphics.components.GraphicsPanel;
 import ru.smak.gui.graphics.coordinates.CartesianScreenPlane;
 import ru.smak.gui.graphics.coordinates.Converter;
 import ru.smak.gui.graphics.fractalcolors.ColorScheme2;
+import ru.smak.math.Fractal;
 import ru.smak.math.Julia;
 
 import javax.swing.*;
