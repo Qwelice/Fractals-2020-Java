@@ -1,32 +1,32 @@
-package ru.smak.gui;
+package ru.smak.gui.graphics;
 
-import ru.smak.gui.graphics.FinishedListener;
-import ru.smak.gui.graphics.FractalPainter;
-import ru.smak.gui.graphics.JuliaFrame;
-import ru.smak.gui.graphics.SelectionPainter;
 import ru.smak.gui.graphics.components.GraphicsPanel;
 import ru.smak.gui.graphics.coordinates.CartesianScreenPlane;
 import ru.smak.gui.graphics.coordinates.Converter;
-import ru.smak.gui.graphics.fractalcolors.ColorScheme1;
 import ru.smak.gui.graphics.fractalcolors.ColorScheme2;
-import ru.smak.math.Mandelbrot;
+import ru.smak.math.Fractal;
+import ru.smak.math.Julia;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class MainWindow extends JFrame {
+public class JuliaFrame extends JFrame {
     GraphicsPanel mainPanel;
+    Julia julia;
+    CartesianScreenPlane plane;
 
     static final Dimension MIN_SIZE = new Dimension(450, 350);
     static final Dimension MIN_FRAME_SIZE = new Dimension(600, 500);
 
-    public MainWindow(){
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+    public JuliaFrame(){
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setMinimumSize(MIN_FRAME_SIZE);
         setTitle("Фракталы");
 
         mainPanel = new GraphicsPanel();
+
+        julia = new Julia();
 
         mainPanel.setBackground(Color.WHITE);
 
@@ -45,15 +45,13 @@ public class MainWindow extends JFrame {
                 .addGap(4)
         );
         pack();
-        var plane = new CartesianScreenPlane(
+        plane = new CartesianScreenPlane(
                 mainPanel.getWidth(),
                 mainPanel.getHeight(),
-                -2, 1, -1, 1
+                -1.5, 1.5, -1, 1
         );
-
-        var m = new Mandelbrot();
         var c = new ColorScheme2();
-        var fp = new FractalPainter(plane, m);
+        var fp = new FractalPainter(plane, julia);
         fp.col = c;
         fp.addFinishedListener(new FinishedListener() {
             @Override
@@ -76,36 +74,29 @@ public class MainWindow extends JFrame {
             @Override
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
-                sp.setVisible(true);
-                sp.setStartPoint(e.getPoint());
+                if(e.getButton() == MouseEvent.BUTTON1){
+                    sp.setVisible(true);
+                    sp.setStartPoint(e.getPoint());
+                }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 super.mouseReleased(e);
-                sp.setVisible(false);
-                var r = sp.getSelectionRect();
-                if(r != null && (r.width > 3 && r.height > 3)){
-                    var xMin = Converter.xScr2Crt(r.x, plane);
-                    var xMax = Converter.xScr2Crt(r.x+r.width, plane);
-                    var yMin  = Converter.yScr2Crt(r.y+r.height, plane);
-                    var yMax = Converter.yScr2Crt(r.y, plane);
-                    plane.xMin = xMin;
-                    plane.xMax = xMax;
-                    plane.yMin = yMin;
-                    plane.yMax = yMax;
-                    mainPanel.repaint();
-                }
-            }
-        });
-        mainPanel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
                 if(e != null && e.getButton() == MouseEvent.BUTTON1){
-                    var jF = new JuliaFrame();
-                    jF.setJuliaParams(e.getX(), e.getY());
-                    jF.setVisible(true);
+                    sp.setVisible(false);
+                    var r = sp.getSelectionRect();
+                    if(r != null && (r.width > 3 && r.height > 3)){
+                        var xMin = Converter.xScr2Crt(r.x, plane);
+                        var xMax = Converter.xScr2Crt(r.x+r.width, plane);
+                        var yMin  = Converter.yScr2Crt(r.y+r.height, plane);
+                        var yMax = Converter.yScr2Crt(r.y, plane);
+                        plane.xMin = xMin;
+                        plane.xMax = xMax;
+                        plane.yMin = yMin;
+                        plane.yMax = yMax;
+                        mainPanel.repaint();
+                    }
                 }
             }
         });
@@ -118,4 +109,15 @@ public class MainWindow extends JFrame {
             }
         });
     }
+
+    public void setJuliaParams(int x, int y){
+        var dx = Converter.xScr2Crt(x, plane);
+        var dy = Converter.yScr2Crt(y, plane);
+        setJuliaParams(dx, dy);
+    }
+    public void setJuliaParams(double x, double y){
+        julia.setC(x, y);
+        mainPanel.repaint();
+    }
 }
+
