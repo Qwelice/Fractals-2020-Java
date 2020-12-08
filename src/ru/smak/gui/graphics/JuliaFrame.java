@@ -111,7 +111,7 @@ public class JuliaFrame extends JFrame {
         });
     }
 
-    public void setJuliaParams(int x, int y){
+    public void setJuliaParams(int x, int y, CartesianScreenPlane plane){
         var dx = Converter.xScr2Crt(x, plane);
         var dy = Converter.yScr2Crt(y, plane);
         setJuliaParams(dx, dy);

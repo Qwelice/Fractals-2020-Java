@@ -105,7 +105,7 @@ public class MainWindow extends JFrame {
                 super.mouseClicked(e);
                 if(e != null && e.getButton() == MouseEvent.BUTTON1){
                     var jF = new JuliaFrame();
-                    jF.setJuliaParams(e.getX(), e.getY());
+                    jF.setJuliaParams(e.getX(), e.getY(), plane);
                     jF.setVisible(true);
                 }
             }
