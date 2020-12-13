@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * Класс реализующий создание видеофайла из фрагментов фрактала
  */
 public class VideoManager extends Manager {
-    // Список, в котором хранятся потоки, выполняющие роль производителей
+    // Список, в котором хранятся потоки-производителей
     private final ArrayList<Thread> threads = new ArrayList<>();
     // Список списков, в которых будут храниться кадры
     private ArrayList<ArrayList<BufferedImage>> queues = new ArrayList<>();
