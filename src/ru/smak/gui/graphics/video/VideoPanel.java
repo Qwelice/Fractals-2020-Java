@@ -1,6 +1,8 @@
 package ru.smak.gui.graphics.video;
 
 import ru.smak.gui.graphics.fractalcolors.Colorizer;
+import ru.smak.gui.graphics.video.mediaprocessor.CatchListener;
+import ru.smak.gui.graphics.video.mediaprocessor.MediaProcessor;
 import ru.smak.math.Fractal;
 
 import javax.swing.*;
@@ -15,8 +17,7 @@ public class VideoPanel extends JPanel {
     private final DefaultListModel<ImageIcon> dlm;
     private final ButtonsPanel buttonsPanel;
 
-    private final ImageManager imageManager;
-    private final VideoManager videoManager;
+    private final MediaProcessor mediaProcessor;
 
     private final JFileChooser fileChooser;
 
@@ -30,8 +31,7 @@ public class VideoPanel extends JPanel {
         content = new JScrollPane(images);
         buttonsPanel = new ButtonsPanel();
 
-        imageManager = new ImageManager();
-        videoManager = new VideoManager();
+        mediaProcessor = new MediaProcessor();
 
         fileChooser = new JFileChooser();
 
@@ -57,15 +57,15 @@ public class VideoPanel extends JPanel {
         buttonsPanel.catchImage.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                notifyCatchListeners(imageManager, videoManager);
-                dlm.add(dlm.size(), imageManager.getIcon(dlm.size()));
+                notifyCatchListeners(mediaProcessor);
+                dlm.add(dlm.size(), mediaProcessor.getImage(dlm.size()));
             }
         });
         buttonsPanel.recordVideo.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if(dlm.size() >= 2)
-                    videoManager.createVideo();
+                    mediaProcessor.createVideo();
             }
         });
         buttonsPanel.getOutputPath.addActionListener(new ActionListener() {
@@ -74,19 +74,18 @@ public class VideoPanel extends JPanel {
                 fileChooser.showSaveDialog(VideoPanel.this);
                 try{
                     var name = fileChooser.getSelectedFile().getPath();
-                    videoManager.setOutputFileName(name);
+                    mediaProcessor.setVideoOutput(name);
                 }catch (NullPointerException exception){}
             }
         });
     }
 
     public void setData(Fractal fractal, Colorizer colorizer){
-        imageManager.loadFractalData(fractal, colorizer);
-        imageManager.setPrefScreen(new Dimension(
+        mediaProcessor.loadFractalData(fractal, colorizer);
+        mediaProcessor.setImageScreen(new Dimension(
                 content.getWidth() - 5,
                 (int)(0.45 * content.getHeight())
         ));
-        videoManager.loadFractalData(fractal, colorizer);
     }
 
     public void changeVisible(){
@@ -99,8 +98,8 @@ public class VideoPanel extends JPanel {
     public void removeCatchListener(CatchListener listener){
         catchListeners.remove(listener);
     }
-    public void notifyCatchListeners(ImageManager iManager, VideoManager videoManager){
+    public void notifyCatchListeners(MediaProcessor mediaProcessor){
         for(var l : catchListeners)
-            l.timeToCatch(iManager, videoManager);
+            l.timeToCatch(mediaProcessor);
     }
 }

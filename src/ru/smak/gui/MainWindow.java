@@ -7,10 +7,8 @@ import ru.smak.gui.graphics.painters.SelectionPainter;
 import ru.smak.gui.graphics.coordinates.CartesianScreenPlane;
 import ru.smak.gui.graphics.coordinates.Converter;
 import ru.smak.gui.graphics.fractalcolors.ColorScheme2;
-import ru.smak.gui.graphics.video.CatchListener;
-import ru.smak.gui.graphics.video.ImageManager;
-import ru.smak.gui.graphics.video.PlaneState;
-import ru.smak.gui.graphics.video.VideoManager;
+import ru.smak.gui.graphics.video.mediaprocessor.CatchListener;
+import ru.smak.gui.graphics.video.mediaprocessor.MediaProcessor;
 import ru.smak.math.Mandelbrot;
 
 import javax.swing.*;
@@ -126,15 +124,11 @@ public class MainWindow extends JFrame {
 
         commonPanel.videoPanel.addCatchListener(new CatchListener() {
             @Override
-            public void timeToCatch(ImageManager imageManager, VideoManager videoManager) {
+            public void timeToCatch(MediaProcessor mediaProcessor) {
                 commonPanel.videoPanel.setData(m, c);
-                imageManager.addImageIcon(new PlaneState(
-                        plane.xMin, plane.xMax, plane.yMin, plane.yMax
-                ));
-                videoManager.setPrefScreen(MIN_SIZE);
-                videoManager.addPlane(new PlaneState(
-                        plane.xMin, plane.xMax, plane.yMin, plane.yMax
-                ));
+
+                mediaProcessor.catchImage(plane);
+                mediaProcessor.setVideoScreen(MIN_SIZE);
             }
         });
     }
