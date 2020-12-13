@@ -150,29 +150,25 @@ public class VideoManager extends Manager {
                     * сколько самих производителей, то начинается процесс потребления результатов
                     * */
                     if (k == creators.size()) {
-                        var j = 0;
                         for (int i = 0; i < creators.size(); i++) {
-                            if (j == i && creators.get(j).isReady()) {
-                                System.out.println("Getting consume index: " + j);
-                                // Цикл, внутри которого происходит кодирование кадров в видеопоток, который мы создали ранее
-                                for (int r = 0; r < queues.get(i).size(); r++) {
-                                    // Получаем готовый кадр
-                                    var img = queues.get(i).get(r);
-                                    // Конвертируем в тот тип, который воспринимает энкодер
-                                    var correctImg = convertToType(img, BufferedImage.TYPE_3BYTE_BGR);
-                                    // Кодируем кадр в видеопоток с определенным временем
-                                    writer.encodeVideo(0, correctImg, nextFrameTime, Global.DEFAULT_TIME_UNIT);
-                                    // Делаем шаг времени
-                                    nextFrameTime += dt;
-                                }
-                                synchronized (queues.get(i)) {
-                                    // вычищаем уже ненужные кадры
-                                    queues.get(i).clear();
-                                    // снимаем поток производителя с режима ожидания
-                                    queues.get(i).notify();
-                                    System.out.println("Consuming Index: " + j + " is stopped");
-                                    j++;
-                                }
+                            System.out.println("Getting consume index: " + i);
+                            // Цикл, внутри которого происходит кодирование кадров в видеопоток, который мы создали ранее
+                            for (int j = 0; j < queues.get(i).size(); j++) {
+                                // Получаем готовый кадр
+                                var img = queues.get(i).get(j);
+                                // Конвертируем в тот тип, который воспринимает энкодер
+                                var correctImg = convertToType(img, BufferedImage.TYPE_3BYTE_BGR);
+                                // Кодируем кадр в видеопоток с определенным временем
+                                writer.encodeVideo(0, correctImg, nextFrameTime, Global.DEFAULT_TIME_UNIT);
+                                // Делаем шаг времени
+                                nextFrameTime += dt;
+                            }
+                            synchronized (queues.get(i)) {
+                                // вычищаем уже ненужные кадры
+                                queues.get(i).clear();
+                                // снимаем поток производителя с режима ожидания
+                                queues.get(i).notify();
+                                System.out.println("Consuming Index: " + i + " is stopped");
                             }
                         }
                     }
