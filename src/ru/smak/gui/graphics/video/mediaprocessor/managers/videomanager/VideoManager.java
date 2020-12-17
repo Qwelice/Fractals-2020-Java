@@ -39,6 +39,14 @@ public class VideoManager extends Manager {
             outputFileName = name;
     }
 
+    public void setVideoTime(int videoTime){
+        this.videoTime = videoTime;
+    }
+
+    public void setFrameRate(int frameRate){
+        this.frameRate = frameRate;
+    }
+
     public void createVideo(ArrayList<CartesianScreenPlane> planes){
         pack(planes);
     }
