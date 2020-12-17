@@ -128,7 +128,7 @@ public class MainWindow extends JFrame {
                 commonPanel.videoPanel.setData(m, c);
 
                 mediaProcessor.catchImage(plane);
-                mediaProcessor.setVideoScreen(MIN_SIZE);
+                mediaProcessor.setVideoScreen(new Dimension(MIN_FRAME_SIZE));
             }
         });
     }

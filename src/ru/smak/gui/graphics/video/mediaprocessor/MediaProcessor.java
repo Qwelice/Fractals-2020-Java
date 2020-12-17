@@ -27,7 +27,7 @@ public class MediaProcessor {
     }
 
     public void setVideoOutput(String name){
-        videoManager.setOutputName(name);
+        videoManager.setOutputFileName(name);
     }
 
     public void setImageScreen(Dimension pref){

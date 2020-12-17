@@ -6,190 +6,137 @@ import com.xuggle.xuggler.Global;
 import com.xuggle.xuggler.ICodec;
 import ru.smak.gui.graphics.coordinates.CartesianScreenPlane;
 import ru.smak.gui.graphics.fractalcolors.Colorizer;
+import ru.smak.gui.graphics.painters.FractalPainter;
 import ru.smak.gui.graphics.video.mediaprocessor.managers.Manager;
 import ru.smak.math.Fractal;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Класс реализующий создание видеофайла из фрагментов фрактала
- */
 public class VideoManager extends Manager {
-    // Список, в котором хранятся потоки-производителей
-    private final ArrayList<Thread> threads = new ArrayList<>();
-    // Список списков, в которых будут храниться кадры
-    private ArrayList<ArrayList<BufferedImage>> queues = new ArrayList<>();
-    // Имя файла, который будет создан в указанном пути
+    private ArrayList<CartesianScreenPlane> planes;
+    private final ArrayDeque<BufferedImage> pictures = new ArrayDeque<>();
+
     private String outputFileName = "D:\\myVideo.mp4";
 
-    public void setOutputName(String name) {
-        if (!name.isEmpty() && name.endsWith(".mp4"))
+    private int videoTime = 10;
+    private int frameRate = 30;
+
+    private boolean consumerStop = false;
+
+    public void consumerStop(){
+        consumerStop = true;
+    }
+
+    private Thread consumer = null;
+    private Thread loader = null;
+
+    public void setOutputFileName(String name){
+        if(!name.isEmpty() && name.endsWith(".mp4"))
             outputFileName = name;
     }
 
-    // Список производителей кадров
-    private final ArrayList<FramesCreator> creators = new ArrayList<>();
-
-    private int videoTime = 10;
-    private double frameRate = 25;
-    // Поток, который будет выполнять роль потребителя
-    private Thread consumer = null;
-
-    /**
-     * Метод для публичного доступа к запуску создания видео
-     *
-     * @param planes области фрактала, на основе которых будет создано видео
-     */
-    public void createVideo(ArrayList<CartesianScreenPlane> planes) {
-        packAndEncode(planes);
+    public void createVideo(ArrayList<CartesianScreenPlane> planes){
+        pack(planes);
     }
 
-    /**
-     * Метод, внутри которого происходит весь процесс создания видео
-     *
-     * @param planes области фрактала, на основе которых будет создано видео
-     */
-    private void packAndEncode(ArrayList<CartesianScreenPlane> planes) {
-        /*
-        Фрагменты фрактала, на основе которых будет создаваться видео
-        делятся на специальные пары
-        * */
-        // Количество пар
-        var pairsCount = 0;
-        // Число фреймов для одной пары
-        var frameCount = videoTime * frameRate;
-        // Число доступных логических процессоров, на которых будут работать производители и потребитель
-        var tdsCount = Runtime.getRuntime().availableProcessors();
-        // Список специальных пар
-        ArrayList<PlanePair> pairs = new ArrayList<>();
-        // Заполнение списка
-        for (int i = 1; i < planes.size(); i++) {
-            pairs.add(new PlanePair(
-                    new CartesianScreenPlane(prefWidth, prefHeight,
-                            planes.get(i - 1).xMin, planes.get(i - 1).xMax, planes.get(i - 1).yMin, planes.get(i - 1).yMax),
-                    new CartesianScreenPlane(prefWidth, prefHeight,
-                            planes.get(i).xMin, planes.get(i).xMax, planes.get(i).yMin, planes.get(i).yMax)
-            ));
-        }
-        // Запоминаем количество пар
-        pairsCount = pairs.size();
-        /*
-        * Выбираем количество создаваемых потоков производителей, каждому из которых
-        * будет присвоено свое место в списке списков изображений queues
-        * */
-        var arraySize = Math.min(pairsCount, tdsCount);
-        /*
-        * Если количество создаваемых потоков-производителей ровно столько,
-        * сколько логических процессоров, то уменьшаем количество создаваемых
-        * потоков-производителей на 1, дабы оставить один процессор для потока-потребителя
-        * */
-        if (arraySize == tdsCount) arraySize--;
-        // Инициализируем нашу псевдо-очередь производителей
-        queues = new ArrayList<>();
-        /*
-        * Заполняем список нулями, т.к. каждый производитель сам инициализирует нужный для него список
-        * создаваемых изображений
-        * */
-        for (int i = 0; i < arraySize; i++) {
-            queues.add(null);
-        }
-        // Заполняем наши списки производителей и их потоков
-        for (int i = 0; i < arraySize; i++) {
-            creators.add(new FramesCreator(fractal, colorizer).setQueues(queues).setFrameCount(frameCount));
-            threads.add(new Thread(creators.get(i)));
-        }
-        var j = 0;
-        // Поочередно подаем каждому производителю пару из заполненного ранее списка пар
-        for (int i = 0; i < pairsCount; i++) {
-            if (j == creators.size())
-                j = 0;
-            creators.get(j).addPair(pairs.get(i));
-            j++;
-        }
-        // Вызываем метод запуска потока-потребителя
-        startConsume();
-        for (var t : threads)
-            t.start();
-
+    private void pack(ArrayList<CartesianScreenPlane> planes){
+        this.planes = planes;
+        constructConsumer();
+        consumer.start();
+        constructLoader();
+        loader.start();
     }
 
-    private void startConsume() {
-        // Инициализируем поток потребителя
+    private void constructConsumer(){
         consumer = new Thread(new Runnable() {
             @Override
             public void run() {
-                // Внутри него распологаем наш writer, который будет кодировать кадры в видео
                 IMediaWriter writer = ToolFactory.makeWriter(outputFileName);
-                // Добавляем видеопоток, в который будут закодированы наши кадры
                 writer.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, prefWidth, prefHeight);
-                // Задаём время для одного кадра в последовательности видеопотока
                 long nextFrameTime = 0;
-                // Шаг времени
-                long dt = Global.DEFAULT_TIME_UNIT.convert(25, TimeUnit.MILLISECONDS);
-                System.out.println("Consumer thread start his work");
-                // Цикл, внутри которого будет происходить процесс потребления
-                while (true) {
-                    // k - счетчик количества завершивших свою работу производителей
-                    var k = 0;
-                    for (var c : creators) {
-                        if (!c.isAlive()) k++;
-                    }
-                    /*
-                    * Если количество завершивших свою работу производителей равно количеству производителей,
-                    * то цикл потребления завершается
-                    * */
-                    if (k == creators.size()) break;
-                    // k - счетчик количества производителей, завершивших работу над одной парой
-                    k = 0;
-                    for (var c : creators) if (c.isReady()) k++;
-                    /*
-                    * Если количество производителей, завершивших работу над одной парой столько,
-                    * сколько самих производителей, то начинается процесс потребления результатов
-                    * */
-                    if (k == creators.size()) {
-                        for (int i = 0; i < creators.size(); i++) {
-                            System.out.println("Getting consume index: " + i);
-                            // Цикл, внутри которого происходит кодирование кадров в видеопоток, который мы создали ранее
-                            for (int j = 0; j < queues.get(i).size(); j++) {
-                                // Получаем готовый кадр
-                                var img = queues.get(i).get(j);
-                                // Конвертируем в тот тип, который воспринимает энкодер
-                                var correctImg = convertToType(img, BufferedImage.TYPE_3BYTE_BGR);
-                                // Кодируем кадр в видеопоток с определенным временем
-                                writer.encodeVideo(0, correctImg, nextFrameTime, Global.DEFAULT_TIME_UNIT);
-                                // Делаем шаг времени
-                                nextFrameTime += dt;
-                            }
-                            synchronized (queues.get(i)) {
-                                // вычищаем уже ненужные кадры
-                                queues.get(i).clear();
-                                // снимаем поток производителя с режима ожидания
-                                queues.get(i).notify();
-                                System.out.println("Consuming Index: " + i + " is stopped");
-                            }
+                long dt = Global.DEFAULT_TIME_UNIT.convert(frameRate, TimeUnit.MILLISECONDS);
+                ArrayList<BufferedImage> readyImg = new ArrayList<>();
+                System.out.println("Encoding is started");
+                while(!consumerStop){
+                    synchronized (pictures){
+                        if(pictures.size() > 0 && pictures.size() % frameRate != 0){
+                            try{
+                                pictures.wait();
+                            }catch (InterruptedException exception){}
                         }
+                        readyImg.clear();
+                        while(pictures.size() > 0){
+                            var img = pictures.poll();
+                            readyImg.add(img);
+                        }
+                        pictures.notify();
+                    }
+                    for(var img : readyImg){
+                        var corrImg = MediaTools.convertToType(img, BufferedImage.TYPE_3BYTE_BGR);
+                        var gCI = corrImg.getGraphics();
+                        gCI.drawImage(img, 0, 0, null);
+                        writer.encodeVideo(0, corrImg, nextFrameTime, Global.DEFAULT_TIME_UNIT);
+                        nextFrameTime += dt;
                     }
                 }
                 writer.close();
                 System.out.println("Encoding is done!");
             }
         });
-        consumer.start();
     }
 
-    public static BufferedImage convertToType(BufferedImage sourceImage, int targetType) {
-        BufferedImage image;
-        if (sourceImage.getType() == targetType) {
-            image = sourceImage;
-        } else {
-            image = new BufferedImage(sourceImage.getWidth(),
-                    sourceImage.getHeight(), targetType);
-            image.getGraphics().drawImage(sourceImage, 0, 0, null);
-        }
-        return image;
+    private void constructLoader(){
+        loader = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                StringBuilder strB = new StringBuilder();
+                var framesCount = videoTime * frameRate;
+                var prev = new CartesianScreenPlane(0, 0, 0, 0, 0, 0);
+                var painter = new FractalPainter(prev, fractal);
+                painter.col = colorizer;
+                for(int i = 1; i < planes.size(); i++){
+                    if(strB.length() > 0)
+                        strB.delete(0, strB.length());
+                    MediaTools.fillPlane(prev, planes.get(i-1), prefWidth, prefHeight);
+                    var dXMin = (planes.get(i).xMin - prev.xMin ) / (1.0 * framesCount);
+                    var dXMax = (planes.get(i).xMax - prev.xMax) / (1.0 * framesCount);
+                    var dYMin = (planes.get(i).yMin - prev.yMin) / (1.0 * framesCount);
+                    var dYMax = (planes.get(i).yMax - prev.yMax) / (1.0 * framesCount);
+                    strB.append("New plane progress: |");
+                    System.out.println(strB.toString());
+                    for(int j = 0; j < framesCount; j++){
+                        if(pictures.size() >= frameRate){
+                            synchronized (pictures){
+                                pictures.notify();
+                                strB.append("=");
+                                System.out.println(strB.toString());
+                                try{
+                                    pictures.wait();
+                                }catch (InterruptedException exception){}
+                            }
+                        }
+                        var img = painter.getSavedImage();
+                        synchronized (pictures){
+                            pictures.add(img);
+                        }
+                        prev.xMin += dXMin;
+                        prev.xMax += dXMax;
+                        prev.yMin += dYMin;
+                        prev.yMax += dYMax;
+                    }
+                    strB.append("|\t : Complete!");
+                    System.out.println(strB.toString());
+                }
+                consumerStop();
+                synchronized (pictures){
+                    pictures.notify();
+                }
+            }
+        });
     }
 
     @Override
