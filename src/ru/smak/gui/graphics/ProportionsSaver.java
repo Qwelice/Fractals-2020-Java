@@ -5,11 +5,19 @@ import ru.smak.gui.graphics.coordinates.CartesianScreenPlane;
 public class ProportionsSaver {
     private int baseWidth;
     private int baseHeight;
+    private double baseXMin;
+    private double baseXMax;
+    private double baseYMin;
+    private double baseYMax;
     private boolean savingOn = false;
 
-    public ProportionsSaver(int width, int height){
+    public ProportionsSaver(CartesianScreenPlane plane, int width, int height){
         baseWidth = width;
         baseHeight = height;
+        baseXMin = plane.xMin;
+        baseXMax = plane.xMax;
+        baseYMin = plane.yMin;
+        baseYMax = plane.yMax;
     }
 
     public void setSaving(boolean state){
@@ -20,10 +28,10 @@ public class ProportionsSaver {
         if(savingOn){
             var wM = baseWidth;
             var hM = baseHeight;
-            var XmaxPlane = plane.xMax;
-            var XminPlane = plane.xMin;
-            var YmaxPlane = plane.yMax;
-            var YminPlane = plane.yMin;
+            var XmaxPlane = baseXMax;
+            var XminPlane = baseXMin;
+            var YmaxPlane = baseYMax;
+            var YminPlane = baseYMin;
 
             var kW = (float)newWidth/(float)wM;
             var kH = (float)newHeight/(float)hM;
@@ -53,8 +61,6 @@ public class ProportionsSaver {
                 plane.yMin = YminPlane - (kH-1)*(YmaxPlane-YminPlane)/2;
                 plane.yMax = YmaxPlane + (kH-1)*(YmaxPlane-YminPlane)/2;
             }
-            baseWidth = newWidth;
-            baseHeight = newHeight;
         }
     }
 

@@ -46,8 +46,6 @@ public class MainWindow extends JFrame {
                 -2, 1, -1, 1
         );
 
-        Transforms.compose(plane);
-
         var m = new Mandelbrot();
         var c = new ColorScheme2();
 
@@ -62,7 +60,8 @@ public class MainWindow extends JFrame {
         });
         mainPanel.addPainter(fp);
         var sp = new SelectionPainter(mainPanel.getGraphics());
-        ProportionsSaver saver = new ProportionsSaver(mainPanel.getWidth(), mainPanel.getHeight());
+        ProportionsSaver saver = new ProportionsSaver(plane, mainPanel.getWidth(), mainPanel.getHeight());
+        Transforms.compose(plane);
         saver.setSaving(true);
 
         mainPanel.addComponentListener(new ComponentAdapter() {
@@ -91,6 +90,7 @@ public class MainWindow extends JFrame {
                 }
                 if(e.getKeyCode() == KeyEvent.VK_H){
                     Transforms.toHome(plane);
+                    saver.maintain(plane, mainPanel.getWidth(), mainPanel.getHeight());
                     mainPanel.repaint();
                 }
             }

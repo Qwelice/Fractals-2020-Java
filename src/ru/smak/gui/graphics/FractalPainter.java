@@ -19,7 +19,6 @@ public class FractalPainter extends Painter{
     private BufferedImage bi = null;
     private static final int stripCount = Runtime.getRuntime().availableProcessors();
     private int done = 0;
-    private ProportionsSaver saver;
 
     private ArrayList<FinishedListener> fin = new ArrayList<>();
 

@@ -27,7 +27,7 @@ public class Transforms {
         base.xMax = plane.xMax;
         base.yMin = plane.yMin;
         base.yMax = plane.yMax;
-        saver = new ProportionsSaver(base.getWidth(), base.getHeight());
+        saver = new ProportionsSaver(plane, plane.getWidth(), plane.getHeight());
         saver.setSaving(true);
     }
 
